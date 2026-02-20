@@ -17,7 +17,8 @@ defmodule EdmFestivalHubWeb.Router do
   scope "/", EdmFestivalHubWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", FestivalLive.Index, :index
+    live "/festivals/:slug", FestivalLive.Show, :show
   end
 
   # Other scopes may use custom stacks.
@@ -38,6 +39,10 @@ defmodule EdmFestivalHubWeb.Router do
       pipe_through :browser
 
       live_dashboard "/dashboard", metrics: EdmFestivalHubWeb.Telemetry
+
+      # Dev-only ingestion screen (no auth yet)
+      live "/festivals/new", EdmFestivalHubWeb.AdminFestivalLive.New, :new
+
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end

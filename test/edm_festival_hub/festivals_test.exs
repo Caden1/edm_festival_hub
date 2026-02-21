@@ -27,4 +27,29 @@ defmodule EdmFestivalHub.FestivalsTest do
       assert festival.name in names
     end
   end
+
+  describe "upsert_wikidata_festival/1" do
+    test "upserts by wikidata_qid" do
+      qid = "QTEST#{System.unique_integer([:positive])}"
+
+      {:ok, f1} =
+        Festivals.upsert_wikidata_festival(%{
+          wikidata_qid: qid,
+          name: "Wikidata One",
+          slug: Festival.slugify("Wikidata One #{qid}"),
+          official_url: "https://example.com/#{qid}"
+        })
+
+      {:ok, f2} =
+        Festivals.upsert_wikidata_festival(%{
+          wikidata_qid: qid,
+          name: "Wikidata One (Renamed)",
+          slug: Festival.slugify("Wikidata One Renamed #{qid}"),
+          official_url: "https://example.com/#{qid}"
+        })
+
+      assert f1.id == f2.id
+      assert f2.name == "Wikidata One (Renamed)"
+    end
+  end
 end

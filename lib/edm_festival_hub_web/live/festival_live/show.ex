@@ -29,12 +29,13 @@ defmodule EdmFestivalHubWeb.FestivalLive.Show do
       <header class="space-y-3">
         <h1 class="text-3xl font-bold">{@festival.name}</h1>
         <p class="opacity-80">
-          {format_dates(@festival.start_date, @festival.end_date)} • {@festival.city}, {@festival.state}
+          {format_dates(@festival.start_date, @festival.end_date)} • {format_location(@festival)}
           <span :if={@festival.venue}>({@festival.venue.name})</span>
         </p>
 
         <div class="flex flex-wrap gap-2">
           <a
+            :if={present?(@festival.official_url)}
             class="btn btn-primary btn-sm"
             href={@festival.official_url}
             target="_blank"
@@ -101,7 +102,7 @@ defmodule EdmFestivalHubWeb.FestivalLive.Show do
               <span :if={entry.day} class="opacity-70">
                 — {Calendar.strftime(entry.day, "%b %d, %Y")}
               </span>
-              <span :if={present?(entry.stage)} class="opacity-70"> —    {entry.stage}</span>
+              <span :if={present?(entry.stage)} class="opacity-70"> —            {entry.stage}</span>
             </li>
           </ul>
         </div>
@@ -128,6 +129,28 @@ defmodule EdmFestivalHubWeb.FestivalLive.Show do
     start_str = Calendar.strftime(start_date, "%b %d, %Y")
     end_str = Calendar.strftime(end_date, "%b %d, %Y")
     if start_str == end_str, do: start_str, else: "#{start_str} – #{end_str}"
+  end
+
+  defp format_dates(%Date{} = start_date, nil) do
+    Calendar.strftime(start_date, "%b %d, %Y")
+  end
+
+  defp format_dates(_, _), do: "Dates TBD"
+
+  defp format_location(festival) do
+    cond do
+      present?(festival.city) and present?(festival.state) ->
+        "#{festival.city}, #{festival.state}"
+
+      present?(festival.state) ->
+        festival.state
+
+      festival.venue && present?(festival.venue.city) && present?(festival.venue.state) ->
+        "#{festival.venue.city}, #{festival.venue.state}"
+
+      true ->
+        "Location TBD"
+    end
   end
 
   defp present?(value) when is_binary(value), do: String.trim(value) != ""

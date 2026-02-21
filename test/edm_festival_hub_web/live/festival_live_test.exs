@@ -21,4 +21,25 @@ defmodule EdmFestivalHubWeb.FestivalLiveTest do
     assert html =~ "Bag policy"
     assert html =~ "https://example.com/bag-policy"
   end
+
+  test "directory lists festivals, including entries without dates", %{conn: conn} do
+    _upcoming = festival_fixture(%{name: "Upcoming Fest"})
+    directory_festival = wikidata_festival_fixture(%{name: "Directory Only"})
+
+    {:ok, _lv, html} = live(conn, ~p"/directory")
+    assert html =~ "Festival Directory"
+    assert html =~ "Upcoming Fest"
+    assert html =~ "Directory Only"
+    assert html =~ directory_festival.slug
+    assert html =~ "Dates TBD"
+  end
+
+  test "show handles festivals with unknown dates and location", %{conn: conn} do
+    festival = wikidata_festival_fixture(%{name: "Mystery Fest"})
+
+    {:ok, _lv, html} = live(conn, ~p"/festivals/#{festival.slug}")
+    assert html =~ "Mystery Fest"
+    assert html =~ "Dates TBD"
+    assert html =~ "Location TBD"
+  end
 end

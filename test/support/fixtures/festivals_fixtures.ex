@@ -36,4 +36,24 @@ defmodule EdmFestivalHub.FestivalsFixtures do
 
     festival
   end
+
+  def wikidata_festival_fixture(attrs \\ %{}) do
+    qid = Map.get(attrs, :wikidata_qid, "QTEST#{System.unique_integer([:positive])}")
+    name = Map.get(attrs, :name, "Wikidata Fest")
+
+    base_attrs = %{
+      wikidata_qid: qid,
+      name: name,
+      slug: EdmFestivalHub.Festivals.Festival.slugify("#{name} #{qid}"),
+      official_url: Map.get(attrs, :official_url, "https://example.com/#{qid}"),
+      start_date: Map.get(attrs, :start_date),
+      end_date: Map.get(attrs, :end_date),
+      city: Map.get(attrs, :city),
+      state: Map.get(attrs, :state),
+      venue: Map.get(attrs, :venue)
+    }
+
+    {:ok, festival} = Festivals.upsert_wikidata_festival(base_attrs)
+    festival
+  end
 end

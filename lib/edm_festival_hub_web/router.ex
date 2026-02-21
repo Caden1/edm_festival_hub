@@ -18,6 +18,7 @@ defmodule EdmFestivalHubWeb.Router do
     pipe_through :browser
 
     live "/", FestivalLive.Index, :index
+    live "/directory", FestivalLive.Directory, :index
     live "/festivals/:slug", FestivalLive.Show, :show
   end
 

@@ -7,6 +7,7 @@ defmodule EdmFestivalHub.Festivals.Venue do
 
   schema "venues" do
     field :name, :string
+    field :wikidata_qid, :string
     field :address, :string
     field :city, :string
     field :state, :string
@@ -22,11 +23,21 @@ defmodule EdmFestivalHub.Festivals.Venue do
   @doc false
   def changeset(venue, attrs) do
     venue
-    |> cast(attrs, [:name, :address, :city, :state, :postal_code, :latitude, :longitude])
+    |> cast(attrs, [
+      :name,
+      :wikidata_qid,
+      :address,
+      :city,
+      :state,
+      :postal_code,
+      :latitude,
+      :longitude
+    ])
     |> trim_fields([:name, :address, :city, :state, :postal_code])
     |> normalize_state(:state)
     |> validate_required([:name])
     |> validate_optional_state(:state)
+    |> unique_constraint(:wikidata_qid)
   end
 
   defp trim_fields(changeset, fields) do

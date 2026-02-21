@@ -16,6 +16,7 @@ defmodule EdmFestivalHub.Festivals.Festival do
   schema "festivals" do
     field :name, :string
     field :slug, :string
+    field :wikidata_qid, :string
     field :start_date, :date
     field :end_date, :date
     field :city, :string
@@ -42,6 +43,7 @@ defmodule EdmFestivalHub.Festivals.Festival do
     |> cast(attrs, [
       :name,
       :slug,
+      :wikidata_qid,
       :start_date,
       :end_date,
       :city,
@@ -67,6 +69,45 @@ defmodule EdmFestivalHub.Festivals.Festival do
     |> cast_assoc(:socials, with: &FestivalSocials.changeset/2)
     |> cast_assoc(:community_links, with: &CommunityLinks.changeset/2)
     |> unique_constraint(:slug)
+    |> unique_constraint(:wikidata_qid)
+  end
+
+  @doc """
+  A more permissive changeset intended for automated imports.
+
+  This allows partial "directory" records where dates/locations are unknown,
+  and permits setting a `venue_id` directly (without nested venue forms).
+  """
+  def import_changeset(festival, attrs) do
+    festival
+    |> cast(attrs, [
+      :name,
+      :slug,
+      :wikidata_qid,
+      :start_date,
+      :end_date,
+      :city,
+      :state,
+      :venue_id,
+      :official_url,
+      :ticket_url,
+      :description,
+      :verified_at
+    ])
+    |> trim_fields([:name, :slug, :city, :state, :official_url, :ticket_url])
+    |> normalize_state(:state)
+    |> maybe_slugify_provided_slug()
+    |> maybe_generate_slug()
+    |> maybe_set_verified_at()
+    |> validate_required([:name, :slug, :official_url, :wikidata_qid])
+    |> validate_length(:state, is: 2)
+    |> validate_end_date_after_start_date()
+    |> validate_url(:official_url, required: true)
+    |> validate_url(:ticket_url, required: false)
+    |> validate_length(:name, min: 2, max: 120)
+    |> validate_length(:slug, min: 2, max: 160)
+    |> unique_constraint(:slug)
+    |> unique_constraint(:wikidata_qid)
   end
 
   defp trim_fields(changeset, fields) do
@@ -102,12 +143,14 @@ defmodule EdmFestivalHub.Festivals.Festival do
     slug = get_field(changeset, :slug)
     name = get_field(changeset, :name)
     start_date = get_field(changeset, :start_date)
+    wikidata_qid = get_field(changeset, :wikidata_qid)
 
     if (is_nil(slug) or slug == "") and is_binary(name) and name != "" do
       base =
-        case start_date do
-          %Date{} -> "#{name} #{Date.to_iso8601(start_date)}"
-          _ -> name
+        cond do
+          match?(%Date{}, start_date) -> "#{name} #{Date.to_iso8601(start_date)}"
+          is_binary(wikidata_qid) and wikidata_qid != "" -> "#{name} #{wikidata_qid}"
+          true -> name
         end
 
       put_change(changeset, :slug, slugify(base))
